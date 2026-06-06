@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 import json
@@ -15,6 +15,15 @@ app.add_middleware(
 
 with open("q-vercel-latency.json", "r") as f:
     telemetry = json.load(f)
+
+
+@app.options("/api/latency")
+async def preflight():
+    response = Response()
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 
 @app.post("/api/latency")
@@ -48,4 +57,9 @@ async def latency_metrics(request: Request):
             "breaches": sum(1 for x in latencies if x > threshold)
         }
 
-    return result
+    response = Response(
+        content=json.dumps(result),
+        media_type="application/json"
+    )
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
